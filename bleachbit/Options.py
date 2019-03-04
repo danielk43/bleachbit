@@ -1,7 +1,7 @@
 # vim: ts=4:sw=4:expandtab
 
 # BleachBit
-# Copyright (C) 2008-2018 Andrew Ziem
+# Copyright (C) 2008-2019 Andrew Ziem
 # https://www.bleachbit.org
 #
 # This program is free software: you can redistribute it and/or modify
@@ -26,6 +26,7 @@ from __future__ import absolute_import, print_function
 
 import bleachbit
 from bleachbit import General
+from bleachbit import _
 
 import logging
 import os
@@ -56,6 +57,7 @@ def path_to_option(pathname):
         pathname = pathname[0] + pathname[2:]
     return pathname
 
+
 class Options:
 
     """Store and retrieve user preferences"""
@@ -82,7 +84,8 @@ class Options:
             print(e)
             from errno import ENOSPC
             if e.errno == ENOSPC:
-                logger.error("disk is full writing configuration '%s'", bleachbit.options_file)
+                logger.error(
+                    _("Disk was full when writing configuration to file %s"), bleachbit.options_file)
             else:
                 raise
         if mkfile and General.sudo_mode():
@@ -106,7 +109,8 @@ class Options:
             except:
                 # this deals with corrupt keys
                 # https://www.bleachbit.org/forum/bleachbit-wont-launch-error-startup
-                logger.error('error checking whether path exists: %s ', pathname)
+                logger.error(
+                    _("Error checking whether path exists: %s"), pathname)
             if not exists:
                 # the file does not on exist, so forget it
                 self.config.remove_option('hashpath', option)
@@ -206,8 +210,8 @@ class Options:
             try:
                 self.set_list('shred_drives', guess_overwrite_paths())
             except:
-                traceback.print_exc()
-                logger.error('error setting default shred drives')
+                logger.exception(
+                    _("Error when setting the default drives to shred."))
 
         # set defaults
         self.__set_default("auto_hide", True)
@@ -228,7 +232,7 @@ class Options:
             if -1 != pos:
                 lang = lang[0: pos]
             for _lang in set([lang, 'en']):
-                logger.info("automatically preserving language '%s'", lang)
+                logger.info(_("Automatically preserving language %s."), lang)
                 self.set_language(_lang, True)
 
         # BleachBit upgrade or first start ever

@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 # BleachBit
-# Copyright (C) 2008-2018 Andrew Ziem
+# Copyright (C) 2008-2019 Andrew Ziem
 # https://www.bleachbit.org
 #
 # This program is free software: you can redistribute it and/or modify
@@ -78,6 +78,41 @@ class WindowsTestCase(common.BleachbitTestCase):
         # now it should be empty
         for f in get_recycle_bin():
             self.fail('recycle bin should be empty, but it is not')
+
+    def test_link(self):
+        """Unit test for links with is_link() and get_recycle_bin()"""
+        if not common.destructive_tests('windows link'):
+            return
+
+        # make a normal directory with a file in it
+        real_dir = os.path.join(self.tempdir, 'real_dir')
+        os.mkdir(real_dir)
+        self.assertExists(real_dir)
+        self.assertEqual(False, is_link(real_dir))
+
+        canary_fn = os.path.join(real_dir, 'do_not_delete')
+        common.touch_file(canary_fn)
+        self.assertExists(canary_fn)
+        self.assertEqual(False, is_link(canary_fn))
+
+        # link to the normal directory
+        link_dir = os.path.join(self.tempdir, 'link_dir')
+        args = ('cmd', '/c', 'mklink', '/d', link_dir, real_dir)
+        from bleachbit.General import run_external
+        (rc, stdout, stderr) = run_external(args)
+        self.assertEqual(rc, 0, stderr)
+        self.assertExists(link_dir)
+        self.assertEqual(True, is_link(link_dir))
+
+        # put the link in the recycle bin
+        move_to_recycle_bin(link_dir)
+
+        # clear the recycle bin
+        for f in get_recycle_bin():
+            FileUtilities.delete(f, shred=False)
+
+        # verify the canary is still there
+        self.assertExists(canary_fn)
 
     def test_delete_locked_file(self):
         """Unit test for delete_locked_file"""

@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 # BleachBit
-# Copyright (C) 2008-2018 Andrew Ziem
+# Copyright (C) 2008-2019 Andrew Ziem
 # https://www.bleachbit.org
 #
 # This program is free software: you can redistribute it and/or modify
@@ -158,6 +158,7 @@ def expanduser(path):
             home = os.path.join(h_drive, h_path)
         final = final.replace('~user/', '')
         final = final.replace('~/', '')
+        final = final.replace('~\\', '')
         final = final.replace('~', '')
         final = os.path.join(home, final)
     return final

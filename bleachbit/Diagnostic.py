@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 # BleachBit
-# Copyright (C) 2008-2018 Andrew Ziem
+# Copyright (C) 2008-2019 Andrew Ziem
 # https://www.bleachbit.org
 #
 # This program is free software: you can redistribute it and/or modify
@@ -40,6 +40,12 @@ def diagnostic_info():
     """Return diagnostic information as a string"""
     # this section is for application and library versions
     s = "BleachBit version %s" % bleachbit.APP_VERSION
+
+    try:
+        from bleachbit.Revision import revision
+        s += '\nGit revision %s' % revision
+    except:
+        pass
     try:
         import gtk
         s += '\nGTK+ version %s' % '.'.join([str(x) for x in gtk.gtk_version])

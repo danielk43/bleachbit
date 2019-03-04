@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 # BleachBit
-# Copyright (C) 2008-2018 Andrew Ziem
+# Copyright (C) 2008-2019 Andrew Ziem
 # https://www.bleachbit.org
 #
 # This program is free software: you can redistribute it and/or modify
@@ -42,6 +42,11 @@ else:
     re_flags = re.IGNORECASE
 
 logger = logging.getLogger(__name__)
+
+
+def has_glob(s):
+    """Checks whether the string contains any glob characters"""
+    return re.search('[?*\[\]]', s) is not None
 
 
 def expand_multi_var(s, variables):
@@ -136,7 +141,7 @@ class FileActionProvider(ActionProvider):
             self.ds['path'] = self.paths[0]
             if not len(self.paths) == 1:
                 logger.warning(
-                    'deep scan does not support multi-value variables')
+                    _("Deep scan does not support multi-value variable."))
         if not any([self.object_type, self.regex, self.nregex,
                     self.wholeregex, self.nwholeregex]):
             # If the filter is not needed, bypass it for speed.
@@ -204,9 +209,16 @@ class FileActionProvider(ActionProvider):
 
         def get_walk_all(top):
             for expanded in glob.iglob(top):
+                any_match = False
                 for path in FileUtilities.children_in_directory(
                         expanded, True):
+                    any_match = True
                     yield path
+                # This is a lint checker because this scenario may
+                # indicate the cleaner developer made a mistake.
+                if not any_match and os.path.isfile(expanded):
+                    logger.debug(
+                        _('search="walk.all" used with regular file path="%s"'), expanded)
 
         def get_walk_files(top):
             for expanded in glob.iglob(top):
@@ -239,6 +251,9 @@ class FileActionProvider(ActionProvider):
             self.nwholeregex_c = re.compile(self.nwholeregex, re_flags)
 
         for input_path in self.paths:
+            if self.search == 'glob' and not has_glob(input_path):
+                # lint for people who develop cleaners
+                logger.debug(_('path="%s" is not a glob pattern'), input_path)
             for path in func(input_path):
                 yield path
 

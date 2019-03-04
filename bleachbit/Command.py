@@ -1,7 +1,7 @@
 # vim: ts=4:sw=4:expandtab
 
 # BleachBit
-# Copyright (C) 2008-2018 Andrew Ziem
+# Copyright (C) 2008-2019 Andrew Ziem
 # https://www.bleachbit.org
 #
 # This program is free software: you can redistribute it and/or modify
@@ -190,7 +190,7 @@ class Ini:
         self.parameter = parameter
 
     def __str__(self):
-        return 'Command to clean .ini path=%s, section=-%s, parameter=%s ' % \
+        return 'Command to clean .ini path=%s, section=%s, parameter=%s ' % \
             (self.path, self.section, self.parameter)
 
     def execute(self, really_delete):

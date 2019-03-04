@@ -2,7 +2,7 @@
 # vim: ts=4:sw=4:expandtab
 
 # BleachBit
-# Copyright (C) 2008-2018 Andrew Ziem
+# Copyright (C) 2008-2019 Andrew Ziem
 # https://www.bleachbit.org
 #
 # This program is free software: you can redistribute it and/or modify
@@ -139,7 +139,7 @@ def process_cmd_line():
                       # This is different than cleaning an arbitrary file, such as a
                       # spreadsheet on the desktop.
                       help=_("run cleaners to delete files and make other permanent changes"))
-    parser.add_option('--debug-log', help='log debug messages to file')
+    parser.add_option('--debug-log', help=_("log debug messages to file"))
     parser.add_option("-s", "--shred", action="store_true",
                       help=_("shred specific files or folders"))
     parser.add_option("--sysinfo", action="store_true",
@@ -162,11 +162,22 @@ def process_cmd_line():
     if 'nt' == os.name:
         parser.add_option("--update-winapp2", action="store_true",
                           help=_("update winapp2.ini, if a new version is available"))
+    parser.add_option("-w", "--wipe-free-space", action="store_true",
+                      help=_("wipe free space in the given paths"))
     parser.add_option("-v", "--version", action="store_true",
                       help=_("output version information and exit"))
     parser.add_option('-o', '--overwrite', action='store_true',
                       help=_('overwrite files to hide contents'))
     (options, args) = parser.parse_args()
+
+    cmd_list = (options.list_cleaners, options.wipe_free_space,
+                options.preview, options.clean)
+    cmd_count = sum(x is True for x in cmd_list)
+    if cmd_count > 1:
+        logger.error(
+            _('Specify only one of these commands: --list-cleaners, --wipe-free-space, --preview, --clean'))
+        sys.exit(1)
+
     did_something = False
     if options.debug_log:
         logger.addHandler(logging.FileHandler(options.debug_log))
@@ -175,18 +186,18 @@ def process_cmd_line():
     if options.version:
         print("""
 BleachBit version %s
-Copyright (C) 2008-2018 Andrew Ziem.  All rights reserved.
+Copyright (C) 2008-2019 Andrew Ziem.  All rights reserved.
 License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
 This is free software: you are free to change and redistribute it.
 There is NO WARRANTY, to the extent permitted by law.""" % APP_VERSION)
         sys.exit(0)
     if 'nt' == os.name and options.update_winapp2:
         from bleachbit import Update
-        logger.info("Checking online for updates to winapp2.ini")
+        logger.info(_("Checking online for updates to winapp2.ini"))
         Update.check_updates(False, True,
                              lambda x: sys.stdout.write("%s\n" % x),
                              lambda: None)
-        # updates can be combined with --list, --preview, --clean
+        # updates can be combined with --list-cleaners, --preview, --clean
         did_something = True
     if options.list_cleaners:
         list_cleaners()
@@ -195,17 +206,34 @@ There is NO WARRANTY, to the extent permitted by law.""" % APP_VERSION)
         from bleachbit.CleanerML import create_pot
         create_pot()
         sys.exit(0)
+    if options.wipe_free_space:
+        if len(args) < 1:
+            logger.error(_("No directories given for --wipe-free-space"))
+            sys.exit(1)
+        for wipe_path in args:
+            if not os.path.isdir(wipe_path):
+                logger.error(
+                    _("Path to wipe must be an existing directory: %s"), wipe_path)
+                sys.exit(1)
+        logger.info(_("Wiping free space can take a long time."))
+        for wipe_path in args:
+            logger.info('Wiping free space in path: %s', wipe_path)
+            import bleachbit.FileUtilities
+            for ret in bleachbit.FileUtilities.wipe_path(wipe_path):
+                pass
+        sys.exit(0)
     if options.preview or options.clean:
         operations = args_to_operations(args, options.preset)
         if not operations:
-            logger.error('No work to do. Specify options.')
+            logger.error(_("No work to do. Specify options."))
             sys.exit(1)
     if options.preview:
         preview_or_clean(operations, False)
         sys.exit(0)
     if options.overwrite:
         if not options.clean or options.shred:
-            logger.warning('--overwrite is intended only for use with --clean')
+            logger.warning(
+                _("--overwrite is intended only for use with --clean"))
         Options.options.set('shred', True, commit=False)
     if options.clean:
         preview_or_clean(operations, True)
